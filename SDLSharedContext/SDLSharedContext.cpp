@@ -9,11 +9,12 @@
 #include <condition_variable>
 #endif
 
+#define GLEW_NO_GLU
 #include "GL/glew.h"
 #define SDL_MAIN_HANDLED
 #include "SDL/SDL.h"
 #include "SDL/SDL_opengl.h"
-#include "glm/gtc/matrix_transform.hpp"
+#include "glm/glm.hpp"
 
 #ifdef MULTITHREADING
 std::mutex s_m;
@@ -69,7 +70,7 @@ GLuint s_depthBuffer;
 
 bool InitSDLWindow()
 {
-	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
 		SDL_Log("Couldn't initialize video driver: %s\n", SDL_GetError());
 		return false;
