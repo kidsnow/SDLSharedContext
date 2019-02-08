@@ -1,5 +1,5 @@
-﻿#define MULTITHREADING
-#define MULTICONTEXT
+﻿// #define MULTITHREADING
+// #define MULTICONTEXT
 
 #include <iostream>
 
@@ -112,8 +112,8 @@ bool InitSDLWindow()
 
 bool CreateGLContext()
 {
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
 	s_mainContext = SDL_GL_CreateContext(s_window);
@@ -125,6 +125,7 @@ bool CreateGLContext()
 	}
 
 	SDL_GL_MakeCurrent(s_window, s_mainContext);
+#ifdef MULTICONTEXT
 	SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 	s_renderContext = SDL_GL_CreateContext(s_window);
 	if (!s_renderContext) {
@@ -133,11 +134,14 @@ bool CreateGLContext()
 		SDL_Quit();
 		return 1;
 	}
+#endif 
 
 	glewExperimental = true;
-	if (glewInit() != GLEW_OK)
+    GLenum err;
+	if (err = glewInit() != GLEW_OK)
 	{
 		std::cerr << "Failed to init GLEW..." << std::endl;
+        fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
 		return false;
 	}
 
