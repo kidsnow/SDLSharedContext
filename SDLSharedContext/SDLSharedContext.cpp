@@ -1,13 +1,5 @@
-﻿// #define MULTITHREADING
-// #define MULTICONTEXT
-
-#include <iostream>
-
-#ifdef MULTITHREADING
+﻿#include <iostream>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
-#endif
 
 #define GLEW_NO_GLU
 #include "GL/glew.h"
@@ -15,58 +7,63 @@
 #include "SDL/SDL.h"
 #include "SDL/SDL_opengl.h"
 #include "glm/glm.hpp"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
-#ifdef MULTITHREADING
-std::mutex s_m;
-std::condition_variable s_cv;
-#endif
-bool s_render = false;
-bool s_processed = false;
-
-SDL_Window* s_window;
-SDL_GLContext s_mainContext, s_renderContext;
-std::string s_windowName = "Hello";
-int s_width = 640, s_height = 480;
-bool s_windowShouldClose = false;
-
-GLuint s_triangleProgram;
-GLuint s_textureProgram;
+typedef struct _testWindow
+{
+	SDL_Window* handle;
+	SDL_GLContext context;
+	std::string name;
+	int posX, posY;
+	int width, height;
+} testWindow;
+bool windowShouldClose = false;
+testWindow s_mainWindow, s_subWindow;
 static const GLfloat s_triangleVertices[] =
 {
-	-1.0f, -1.0f, 0.0f,
-	1.0f, -1.0f, 0.0f,
-	0.0f,  1.0f, 0.0f,
+	-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,	// lower left
+	 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,	// lower right
+	-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,	// upper left
+	-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,	// upper left
+	 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,	// lower right
+	 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,	// upper right
 };
-GLuint s_triangleVBO;
-GLuint s_squareVertexVBO, s_squareTexCoordVBO;
 GLuint s_textureLoc;
-GLuint s_MVPMatLoc;
-glm::mat4x4 s_MVPMat;
-GLuint s_colorLoc;
-GLfloat s_color;
+GLuint s_texture;
 
-static const GLfloat s_squareVertices[] =
+bool CreateAndShowWindow(testWindow& window)
 {
-	-1.0f, -1.0f, 0.0f,// lower left
-	 1.0f, -1.0f, 0.0f, // lower right
-	-1.0f,  1.0f, 0.0f,// upper left
-	-1.0f,  1.0f, 0.0f,// upper left
-	 1.0f, -1.0f, 0.0f, // lower right
-	 1.0f,  1.0f, 0.0f, // upper right
-};
-static const GLfloat s_squareTexCoords[] =
-{
-	0.0f, 0.0f, // lower left
-	1.0f, 0.0f,	// lower right
-	0.0f, 1.0f,	// upper left
-	0.0f, 1.0f,	// upper left
-	1.0f, 0.0f,	// lower right
-	1.0f, 1.0f	// upper right
-};
+	uint32_t windowFlags;
 
-GLuint s_frameBuffer;
-GLuint s_renderedTexture;
-GLuint s_depthBuffer;
+	windowFlags = 0;
+	windowFlags |= SDL_WINDOW_RESIZABLE;
+	windowFlags |= SDL_WINDOW_OPENGL;
+
+	window.handle = SDL_CreateWindow(window.name.c_str(),
+		window.posX, window.posY,
+		window.width, window.height, windowFlags);
+	if (window.handle == NULL)
+	{
+		SDL_Log("Couldn't create window: %s\n", SDL_GetError());
+		SDL_Quit();
+		return false;
+	}
+
+	int createdWindowWidth, createdWindowHeight;
+	SDL_GetWindowSize(window.handle, &createdWindowWidth, &createdWindowHeight);
+	if (!(windowFlags & SDL_WINDOW_RESIZABLE) &&
+		(createdWindowWidth != window.width || createdWindowHeight != window.height)) {
+		printf("Window requested size %dx%d, got %dx%d\n",
+			window.width, window.height, createdWindowWidth, createdWindowHeight);
+		window.width = createdWindowWidth;
+		window.height = createdWindowHeight;
+	}
+
+	SDL_ShowWindow(window.handle);
+
+	return true;
+}
 
 bool InitSDLWindow()
 {
@@ -76,36 +73,22 @@ bool InitSDLWindow()
 		return false;
 	}
 
-	SDL_DisplayMode displayMode;
-	uint32_t windowFlags;
+	s_mainWindow.name = "Main";
+	s_mainWindow.posX = 100;
+	s_mainWindow.posY = 100;
+	s_mainWindow.width = 960;
+	s_mainWindow.height = 540;
 
-	SDL_zero(displayMode);
-	displayMode.format = SDL_PIXELFORMAT_RGB888;
-	displayMode.refresh_rate = 0;
+	s_subWindow.name = "Sub";
+	s_subWindow.posX = 1200;
+	s_subWindow.posY = 100;
+	s_subWindow.width = 640;
+	s_subWindow.height = 360;
 
-	windowFlags = 0;
-	windowFlags |= SDL_WINDOW_RESIZABLE;
-	windowFlags |= SDL_WINDOW_OPENGL;
-	
-	s_window = SDL_CreateWindow(s_windowName.c_str(), 100, 100, 640, 480, windowFlags);
-	if (s_window == NULL)
-	{
-		SDL_Log("Couldn't create window: %s\n", SDL_GetError());
-		SDL_Quit();
+	if (!CreateAndShowWindow(s_mainWindow))
 		return false;
-	}
-
-	int createdWindowWidth, createdWindowHeight;
-	SDL_GetWindowSize(s_window, &createdWindowWidth, &createdWindowHeight);
-	if (!(windowFlags & SDL_WINDOW_RESIZABLE) &&
-		(createdWindowWidth != s_width || createdWindowHeight != s_height)) {
-		printf("Window requested size %dx%d, got %dx%d\n",
-			s_width, s_height, createdWindowWidth, createdWindowHeight);
-		s_width = createdWindowWidth;
-		s_height = createdWindowHeight;
-	}
-
-	SDL_ShowWindow(s_window);
+	if (!CreateAndShowWindow(s_subWindow))
+		return false;
 
 	return true;
 }
@@ -116,25 +99,25 @@ bool CreateGLContext()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-	s_mainContext = SDL_GL_CreateContext(s_window);
-	if (!s_mainContext) {
+	s_mainWindow.context = SDL_GL_CreateContext(s_mainWindow.handle);
+	if (!s_mainWindow.context) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_GL_CreateContext(): %s\n", SDL_GetError());
-		SDL_DestroyWindow(s_window);
+		SDL_DestroyWindow(s_mainWindow.handle);
 		SDL_Quit();
 		return 1;
 	}
 
-	SDL_GL_MakeCurrent(s_window, s_mainContext);
-#ifdef MULTICONTEXT
+	SDL_GL_MakeCurrent(s_mainWindow.handle, s_mainWindow.context);
+
 	SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-	s_renderContext = SDL_GL_CreateContext(s_window);
-	if (!s_renderContext) {
+	s_subWindow.context = SDL_GL_CreateContext(s_subWindow.handle);
+	if (!s_mainWindow.context) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_GL_CreateContext(): %s\n", SDL_GetError());
-		SDL_DestroyWindow(s_window);
+		SDL_DestroyWindow(s_subWindow.handle);
 		SDL_Quit();
 		return 1;
 	}
-#endif 
+	SDL_GL_MakeCurrent(s_mainWindow.handle, s_mainWindow.context);
 
 	glewExperimental = true;
     GLenum err;
@@ -236,176 +219,93 @@ bool CreateShaderProgram(const char* vsFileName, const char* fsFileName, GLuint&
 
 bool InitGLCommonResources()
 {
-#ifdef MULTICONTEXT
-	SDL_GL_MakeCurrent(s_window, s_mainContext);
-#endif
+	glGenTextures(1, &s_texture);
+	glBindTexture(GL_TEXTURE_2D, s_texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glGenTextures(1, &s_renderedTexture);
-	glBindTexture(GL_TEXTURE_2D, s_renderedTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+	int width, height, nrChannels;
+	unsigned char *data = stbi_load("PolygonPlanet.png", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cerr << "Failed to load texture." << std::endl;
+	}
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	stbi_image_free(data);
 
 	return true;
 }
 
 bool InitGLResourcesForTriangle()
 {
-#ifdef MULTICONTEXT
-	SDL_GL_MakeCurrent(s_window, s_renderContext);
-#endif
+	GLuint triangleProgram;
+	GLuint triangleVAO;
+	GLuint triangleVBO;
 
-	if (!CreateShaderProgram("triangle.vert", "triangle.frag", s_triangleProgram))
+	if (!CreateShaderProgram("triangle.vert", "triangle.frag", triangleProgram))
 		return false;
-	
-	s_MVPMatLoc = glGetUniformLocation(s_triangleProgram, "u_MVPMat");
-	s_MVPMat = glm::mat4x4(1.0f);
 
-	s_colorLoc = glGetUniformLocation(s_triangleProgram, "u_color");
-	s_color = 0.0f;
+	glUseProgram(triangleProgram);
+
+	// Initialize vertex array object.
+	glGenVertexArrays(1, &triangleVAO);
+	glBindVertexArray(triangleVAO);
 	
 	// Initialize vertex buffer object.
-	glGenBuffers(1, &s_triangleVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, s_triangleVBO);
+	glGenBuffers(1, &triangleVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(s_triangleVertices), s_triangleVertices, GL_STATIC_DRAW);
 
-	// Generate render target.
-	glGenFramebuffers(1, &s_frameBuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, s_frameBuffer);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
 
-	glGenRenderbuffers(1, &s_depthBuffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, s_depthBuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 640, 480);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, s_depthBuffer);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, s_renderedTexture, 0);
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 
-	return true;
-}
-
-bool InitGLResourcesForTexture()
-{
-#ifdef MULTICONTEXT
-	SDL_GL_MakeCurrent(s_window, s_mainContext);
-#endif
-
-	if (!CreateShaderProgram("texture.vert", "texture.frag", s_textureProgram))
-		return false;
-
-	s_textureLoc = glGetUniformLocation(s_textureProgram, "u_renderedTexture");
-
-	// Initialize vertex buffer object.
-
-	glGenBuffers(1, &s_squareVertexVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, s_squareVertexVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(s_squareVertices), s_squareVertices, GL_STATIC_DRAW);
-
-	glGenBuffers(1, &s_squareTexCoordVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, s_squareTexCoordVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(s_squareTexCoords), s_squareTexCoords, GL_STATIC_DRAW);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, s_texture);
+	glUniform1i(s_textureLoc, 0);
 
 	return true;
 }
 
-void RenderTriangleToTexture()
+void RenderTriangle()
 {
-	// Render triangle to texture.
-#ifdef MULTICONTEXT
-	SDL_GL_MakeCurrent(s_window, s_renderContext);
-#endif
-
-	glBindFramebuffer(GL_FRAMEBUFFER, s_frameBuffer);
-	glViewport(0, 0, 640, 480);
-
 	glClearColor(0.4f, 0.4f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, s_triangleVBO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-
-	glUseProgram(s_triangleProgram);
-	glProgramUniformMatrix4fv(s_triangleProgram, s_MVPMatLoc, 1, GL_FALSE, &s_MVPMat[0][0]);
-	s_color += 0.0005f;
-	if (s_color > 1.0f)
-		s_color = 0.0f;
-	glProgramUniform1fv(s_triangleProgram, s_colorLoc, 1, &s_color);
-
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-
-	glFinish();
-
-	return;
-}
-
-void RenderTextureToSurface()
-{
-	// Render texture to window surface.
-#ifdef MULTICONTEXT
-	SDL_GL_MakeCurrent(s_window, s_mainContext);
-#endif
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, 640, 480);
-
-	glClearColor(1.0f, 0.4f, 0.4f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, s_squareVertexVBO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, s_squareTexCoordVBO);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, s_renderedTexture);
-	glUniform1i(s_textureLoc, 0);
-
-	glUseProgram(s_textureProgram);
-
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
-	SDL_GL_SwapWindow(s_window);
+	SDL_GL_SwapWindow(s_mainWindow.handle);
 
 	glFinish();
 
 	return;
 }
 
-#ifdef MULTITHREADING
-void renderThreadMain()
+void subWindowThreadMain()
 {
-#ifndef MULTICONTEXT
-	SDL_GL_MakeCurrent(s_window, s_mainContext);
-#endif
-
+	SDL_GL_MakeCurrent(s_subWindow.handle, s_subWindow.context);
 	if (!InitGLResourcesForTriangle())
-	{
-		std::cerr << "Failed to init resources for triangle." << std::endl;
 		return;
-	}
 
-	while (true)
+	while (!windowShouldClose)
 	{
-		std::unique_lock<std::mutex> lk(s_m);
-		s_cv.wait(lk, [] { return s_render; });
-		
-		RenderTriangleToTexture();
-
-		s_processed = true;
-		s_render = false;
-		lk.unlock();
-		s_cv.notify_one();
-
-		if (s_windowShouldClose)
-			break;
+		RenderTriangle();
+		SDL_GL_SwapWindow(s_subWindow.handle);
 	}
 
-	std::cout << "Received close signal!" << std::endl;
+	return;
 }
-#endif
 
 int main(int argc, char *argv[])
 {
@@ -415,35 +315,16 @@ int main(int argc, char *argv[])
 		return 1;
 	if (!InitGLCommonResources())
 		return 1;
-#ifndef MULTITHREADING
+
+	std::thread subWindowThread(subWindowThreadMain);
+
 	if (!InitGLResourcesForTriangle())
-		return 1;
-#endif
-	if (!InitGLResourcesForTexture())
 		return 1;
 
 	SDL_Event event;
 
-#ifdef MULTITHREADING
-	std::thread renderThread(renderThreadMain);
-
+	while (!windowShouldClose)
 	{
-		std::lock_guard<std::mutex> lk(s_m);
-		s_render = true;
-		s_processed = false;
-	}
-	s_cv.notify_one();
-#endif
-
-	while (!s_windowShouldClose)
-	{
-#ifdef MULTITHREADING
-		{
-			std::unique_lock<std::mutex> lk(s_m);
-			s_cv.wait(lk, [] { return s_processed; });
-		}
-#endif
-
 		while (SDL_PollEvent(&event))
 		{
 			switch (event.type)
@@ -452,7 +333,7 @@ int main(int argc, char *argv[])
 				switch (event.window.event)
 				{
 				case SDL_WINDOWEVENT_CLOSE:
-					s_windowShouldClose = true;
+					windowShouldClose = true;
 					break;
 				}
 				break;
@@ -460,33 +341,22 @@ int main(int argc, char *argv[])
 				switch (event.key.keysym.sym)
 				{
 				case SDLK_ESCAPE:
-					s_windowShouldClose = true;
+					windowShouldClose = true;
 					break;
 				}
 
 				break;
 			}
 		}
-#ifndef MULTITHREADING
-		RenderTriangleToTexture();
-		RenderTextureToSurface();
-#else
-		RenderTextureToSurface();
-		{
-			std::lock_guard<std::mutex> lk(s_m);
-			s_render = true;
-			s_processed = false;
-		}
-		s_cv.notify_one();
-#endif
+		RenderTriangle();
 	}
 
-#ifdef MULTITHREADING
-	renderThread.join();
-#endif
+	subWindowThread.join();
 
-	SDL_GL_DeleteContext(s_mainContext);
-	SDL_DestroyWindow(s_window);
+	SDL_GL_DeleteContext(s_subWindow.context);
+	SDL_DestroyWindow(s_subWindow.handle);
+	SDL_GL_DeleteContext(s_mainWindow.context);
+	SDL_DestroyWindow(s_mainWindow.handle);
 	SDL_Quit();
 
 	return 0;

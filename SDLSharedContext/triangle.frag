@@ -2,8 +2,9 @@
 
 layout (location = 0) out vec4 final_color;
 
-uniform float u_color;
+in vec2 UV;
+uniform sampler2D u_texture;
 
 void main(void) {
-    final_color = vec4(u_color, 1.0f, u_color, 1.0f);
+    final_color = texture(u_texture, vec2(UV.x, -UV.y));
 }

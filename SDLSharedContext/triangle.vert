@@ -1,9 +1,11 @@
 #version 330
 
-uniform mat4 u_MVPMat;
-
 layout (location = 0) in vec4 a_position;
+layout (location = 1) in vec2 a_texcoord;
+
+out vec2 UV;
 
 void main(void) {
-    gl_Position = u_MVPMat * a_position;
+    gl_Position = a_position;
+	UV = a_texcoord;
 }

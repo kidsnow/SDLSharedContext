@@ -186,10 +186,11 @@ xcopy /y $(SolutionDir)\ThirdParty\lib\$(PlatformTarget)\glew32.dll $(OutDir)</C
     <ClCompile Include="SDLSharedContext.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="texture.frag" />
-    <None Include="texture.vert" />
     <None Include="triangle.frag" />
     <None Include="triangle.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
