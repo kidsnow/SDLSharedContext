@@ -10,6 +10,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include "shader.h"
+#include "texture.h"
+
 typedef struct _testWindow
 {
 	SDL_Window* handle;
@@ -29,8 +32,7 @@ static const GLfloat s_triangleVertices[] =
 	 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,	// lower right
 	 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,	// upper right
 };
-GLuint s_textureLoc;
-GLuint s_texture;
+Texture2D* s_texture2D;
 
 bool CreateAndShowWindow(testWindow& window)
 {
@@ -133,105 +135,14 @@ bool CreateGLContext()
 	return true;
 }
 
-GLchar* ReadShader(const char* fileName) {
-	FILE* infile = fopen(fileName, "rb");
-	if (!infile) {
-		std::cerr << "Unable to open file '" << fileName << "'" << std::endl;
-		return NULL;
-	}
-
-	fseek(infile, 0, SEEK_END);
-	int len = ftell(infile);
-	fseek(infile, 0, SEEK_SET);
-
-	GLchar* source = (GLchar*)malloc((len + 1) * sizeof(GLchar));
-
-	fread(source, 1, len, infile);
-	fclose(infile);
-
-	source[len] = 0;
-
-	return source;
-}
-
-bool CompileShader(const char* shaderFileName, GLenum shaderType, GLuint& shader)
-{
-	shader = glCreateShader(shaderType);
-	if (shader == NULL)
-	{
-		std::cerr << ("Failed to create shader object.") << std::endl;
-		return false;
-	}
-
-	GLchar* source = ReadShader(shaderFileName);
-	if (source == NULL)
-	{
-		glDeleteShader(shader);
-		return false;
-	}
-
-	glShaderSource(shader, 1, &source, NULL);
-	free(source);
-
-	glCompileShader(shader);
-
-	GLint compiled;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-	if (!compiled)
-	{
-		GLsizei asdf;
-		GLchar* infoLog = new GLchar[10000];
-		glGetShaderInfoLog(shader, 10000, &asdf, infoLog);
-		glDeleteShader(shader);
-		return false;
-	}
-
-	return true;
-}
-
-bool CreateShaderProgram(const char* vsFileName, const char* fsFileName, GLuint& program)
-{
-	program = glCreateProgram();
-	if (program == NULL)
-	{
-		std::cerr << "Failed to create m_program object." << std::endl;
-		return false;
-	}
-
-	GLuint vertexShader, fragmentShader;
-	if (!CompileShader(vsFileName, GL_VERTEX_SHADER, vertexShader)) return false;
-	if (!CompileShader(fsFileName, GL_FRAGMENT_SHADER, fragmentShader)) return false;
-	glAttachShader(program, vertexShader);
-	glAttachShader(program, fragmentShader);
-
-	glLinkProgram(program);
-	GLint linked;
-	glGetProgramiv(program, GL_LINK_STATUS, &linked);
-	if (!linked)
-	{
-		glDeleteShader(vertexShader);
-		glDeleteShader(fragmentShader);
-		return false;
-	}
-
-	return true;
-}
-
 bool InitGLCommonResources()
 {
-	glGenTextures(1, &s_texture);
-	glBindTexture(GL_TEXTURE_2D, s_texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
 	int width, height, nrChannels;
 	unsigned char *data = stbi_load("PolygonPlanet.png", &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		s_texture2D = new Texture2D();
+		s_texture2D->Generate(width, height, data);
 	}
 	else
 	{
@@ -249,10 +160,9 @@ bool InitGLResourcesForTriangle()
 	GLuint triangleVAO;
 	GLuint triangleVBO;
 
-	if (!CreateShaderProgram("triangle.vert", "triangle.frag", triangleProgram))
-		return false;
-
-	glUseProgram(triangleProgram);
+	Shader* s_shader = new Shader();
+	s_shader->CompileRenderingShader("triangle.vert", "triangle.frag");
+	s_shader->Use();
 
 	// Initialize vertex array object.
 	glGenVertexArrays(1, &triangleVAO);
@@ -272,8 +182,7 @@ bool InitGLResourcesForTriangle()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, s_texture);
-	glUniform1i(s_textureLoc, 0);
+	s_texture2D->Bind();
 
 	return true;
 }
