@@ -32,7 +32,10 @@ static const GLfloat s_triangleVertices[] =
 	 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,	// lower right
 	 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,	// upper right
 };
-Texture2D* s_texture2D;
+GLuint s_srcTexture;
+GLuint s_dstTexture;
+//GLuint s_offscreenFBO;
+GLuint s_depthbuffer;
 
 bool CreateAndShowWindow(testWindow& window)
 {
@@ -137,12 +140,19 @@ bool CreateGLContext()
 
 bool InitGLCommonResources()
 {
+	glGenTextures(1, &s_srcTexture);
+	glBindTexture(GL_TEXTURE_2D, s_srcTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 	int width, height, nrChannels;
 	unsigned char *data = stbi_load("PolygonPlanet.png", &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		s_texture2D = new Texture2D();
-		s_texture2D->Generate(width, height, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
 	{
@@ -182,7 +192,39 @@ bool InitGLResourcesForTriangle()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 
 	glActiveTexture(GL_TEXTURE0);
-	s_texture2D->Bind();
+	glBindTexture(GL_TEXTURE_2D, s_srcTexture);
+
+	return true;
+}
+
+bool InitGLResourcesForFramebuffer(GLuint& offscreenFBO, int width, int height)
+{
+	glGenTextures(1, &s_dstTexture);
+	glBindTexture(GL_TEXTURE_2D, s_dstTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	glGenFramebuffers(1, &offscreenFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, offscreenFBO);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, s_dstTexture, 0);
+
+	glGenRenderbuffers(1, &s_depthbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, s_depthbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, s_depthbuffer);
+
+	if (GL_FRAMEBUFFER_COMPLETE != glCheckFramebufferStatus(GL_FRAMEBUFFER))
+	{
+		std::cerr << "Failed to generate framebuffer!" << std::endl;
+		return false;
+	}
 
 	return true;
 }
@@ -194,11 +236,45 @@ void RenderTriangle()
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
-	SDL_GL_SwapWindow(s_mainWindow.handle);
-
 	glFinish();
 
 	return;
+}
+
+void FBO_2_PPM_file(int width, int height)
+{
+	FILE    *output_image;
+	int     output_width, output_height;
+
+	output_width = width;
+	output_height = height;
+
+	/// READ THE PIXELS VALUES from FBO AND SAVE TO A .PPM FILE
+	int             i, j, k;
+	unsigned char   *pixels = (unsigned char*)malloc(output_width*output_height * 3);
+
+	/// READ THE CONTENT FROM THE FBO
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	glReadPixels(0, 0, output_width, output_height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+	output_image = fopen("output.ppm", "wt");
+	fprintf(output_image, "P3\n");
+	fprintf(output_image, "# Created by Ricao\n");
+	fprintf(output_image, "%d %d\n", output_width, output_height);
+	fprintf(output_image, "255\n");
+
+	k = 0;
+	for (i = 0; i < output_width; i++)
+	{
+		for (j = 0; j < output_height; j++)
+		{
+			fprintf(output_image, "%u %u %u ", (unsigned int)pixels[k], (unsigned int)pixels[k + 1],
+				(unsigned int)pixels[k + 2]);
+			k = k + 3;
+		}
+		fprintf(output_image, "\n");
+	}
+	free(pixels);
 }
 
 void subWindowThreadMain()
@@ -206,11 +282,25 @@ void subWindowThreadMain()
 	SDL_GL_MakeCurrent(s_subWindow.handle, s_subWindow.context);
 	if (!InitGLResourcesForTriangle())
 		return;
+	GLuint offscreenFBO;
+	if (!InitGLResourcesForFramebuffer(offscreenFBO, s_subWindow.width, s_subWindow.height))
+		return;
 
 	while (!windowShouldClose)
 	{
+		/*glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, s_srcTexture);
 		RenderTriangle();
-		SDL_GL_SwapWindow(s_subWindow.handle);
+		SDL_GL_SwapWindow(s_subWindow.handle);*/
+		glBindFramebuffer(GL_FRAMEBUFFER, offscreenFBO);
+		glActiveTexture(GL_TEXTURE0);
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, s_srcTexture);
+		RenderTriangle();
+		FBO_2_PPM_file(s_subWindow.width, s_subWindow.height);
+
+		break;
 	}
 
 	return;
@@ -225,10 +315,16 @@ int main(int argc, char *argv[])
 	if (!InitGLCommonResources())
 		return 1;
 
+	glFinish();
+
 	std::thread subWindowThread(subWindowThreadMain);
 
 	if (!InitGLResourcesForTriangle())
 		return 1;
+
+	/*GLuint offscreenFBO;
+	if (!InitGLResourcesForFramebuffer(offscreenFBO, s_mainWindow.width, s_mainWindow.height))
+		return 1;*/
 
 	SDL_Event event;
 
@@ -257,7 +353,15 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		RenderTriangle();
+		
+		/*glBindFramebuffer(GL_FRAMEBUFFER, offscreenFBO);
+		glActiveTexture(GL_TEXTURE0);
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, s_srcTexture);
+		RenderTriangle();*/
+		//FBO_2_PPM_file(s_mainWindow.width, s_mainWindow.height);
+
+		break;
 	}
 
 	subWindowThread.join();
