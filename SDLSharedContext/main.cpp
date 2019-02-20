@@ -241,7 +241,7 @@ void RenderTriangle()
 	return;
 }
 
-void FBO_2_PPM_file(int width, int height)
+void FBO_2_PPM_file(const char* fileName, int width, int height)
 {
 	FILE    *output_image;
 	int     output_width, output_height;
@@ -257,7 +257,7 @@ void FBO_2_PPM_file(int width, int height)
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 	glReadPixels(0, 0, output_width, output_height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
-	output_image = fopen("output.ppm", "wt");
+	output_image = fopen(fileName, "wt");
 	fprintf(output_image, "P3\n");
 	fprintf(output_image, "# Created by Ricao\n");
 	fprintf(output_image, "%d %d\n", output_width, output_height);
@@ -298,7 +298,7 @@ void subWindowThreadMain()
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, s_srcTexture);
 		RenderTriangle();
-		FBO_2_PPM_file(s_subWindow.width, s_subWindow.height);
+		FBO_2_PPM_file("subWindow.ppm", s_subWindow.width, s_subWindow.height);
 
 		break;
 	}
@@ -317,14 +317,14 @@ int main(int argc, char *argv[])
 
 	glFinish();
 
-	std::thread subWindowThread(subWindowThreadMain);
+	//std::thread subWindowThread(subWindowThreadMain);
 
 	if (!InitGLResourcesForTriangle())
 		return 1;
 
-	/*GLuint offscreenFBO;
+	GLuint offscreenFBO;
 	if (!InitGLResourcesForFramebuffer(offscreenFBO, s_mainWindow.width, s_mainWindow.height))
-		return 1;*/
+		return 1;
 
 	SDL_Event event;
 
@@ -354,17 +354,17 @@ int main(int argc, char *argv[])
 			}
 		}
 		
-		/*glBindFramebuffer(GL_FRAMEBUFFER, offscreenFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, offscreenFBO);
 		glActiveTexture(GL_TEXTURE0);
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, s_srcTexture);
-		RenderTriangle();*/
-		//FBO_2_PPM_file(s_mainWindow.width, s_mainWindow.height);
+		RenderTriangle();
+		FBO_2_PPM_file("mainWindow.ppm", s_mainWindow.width, s_mainWindow.height);
 
 		break;
 	}
 
-	subWindowThread.join();
+	//subWindowThread.join();
 
 	SDL_GL_DeleteContext(s_subWindow.context);
 	SDL_DestroyWindow(s_subWindow.handle);
