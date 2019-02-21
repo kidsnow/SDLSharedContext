@@ -2,7 +2,6 @@
 
 #include "application.h"
 #include "shader.h"
-#include "texture.h"
 
 class ShareSrcTextureApp : public Application
 {
@@ -18,8 +17,8 @@ private:
 	testWindow m_mainWindow, m_subWindow;
 	std::thread* m_subWindowThread;
 	bool m_windowShouldClose = false;
-	Texture2D* m_texture2D;
 	GLfloat* m_rectangleVertices;
+	GLuint m_texture;
 
 private:
 	bool CreateAndShowWindow(testWindow& window);

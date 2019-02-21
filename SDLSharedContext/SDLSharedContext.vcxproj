@@ -184,7 +184,6 @@ xcopy /y $(SolutionDir)\ThirdParty\lib\$(PlatformTarget)\glew32.dll $(OutDir)</C
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="share_src_texture.cpp" />
-    <ClCompile Include="camera.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shader.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -196,7 +195,6 @@ xcopy /y $(SolutionDir)\ThirdParty\lib\$(PlatformTarget)\glew32.dll $(OutDir)</C
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="triangle.frag" />
@@ -204,11 +202,9 @@ xcopy /y $(SolutionDir)\ThirdParty\lib\$(PlatformTarget)\glew32.dll $(OutDir)</C
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h" />
-    <ClInclude Include="camera.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="share_src_texture.h" />
     <ClInclude Include="stb_image.h" />
-    <ClInclude Include="texture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

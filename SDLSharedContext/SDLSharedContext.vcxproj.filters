@@ -29,13 +29,7 @@
     <ClInclude Include="stb_image.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="camera.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="shader.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="texture.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="application.h">
@@ -49,13 +43,7 @@
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="camera.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="shader.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="texture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="share_src_texture.cpp">
