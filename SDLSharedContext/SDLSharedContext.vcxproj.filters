@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="소스 파일\scenarios">
+      <UniqueIdentifier>{2649ea72-f0db-4208-add9-d1f5d490590f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="triangle.frag">
@@ -35,6 +38,12 @@
     <ClInclude Include="texture.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="application.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="share_src_texture.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -48,6 +57,9 @@
     </ClCompile>
     <ClCompile Include="texture.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="share_src_texture.cpp">
+      <Filter>소스 파일\scenarios</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
