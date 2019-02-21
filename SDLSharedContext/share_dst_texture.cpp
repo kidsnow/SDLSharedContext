@@ -1,6 +1,6 @@
-#include "share_src_texture.h"
+#include "share_dst_texture.h"
 
-bool ShareSrcTextureApp::CreateAndShowWindow(testWindow& window)
+bool ShareDstTextureApp::CreateAndShowWindow(testWindow& window)
 {
 	uint32_t windowFlags;
 
@@ -33,7 +33,7 @@ bool ShareSrcTextureApp::CreateAndShowWindow(testWindow& window)
 	return true;
 }
 
-bool ShareSrcTextureApp::InitSDLWindow()
+bool ShareDstTextureApp::InitSDLWindow()
 {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
@@ -61,7 +61,7 @@ bool ShareSrcTextureApp::InitSDLWindow()
 	return true;
 }
 
-bool ShareSrcTextureApp::CreateGLContext()
+bool ShareDstTextureApp::CreateGLContext()
 {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
@@ -101,7 +101,7 @@ bool ShareSrcTextureApp::CreateGLContext()
 	return true;
 }
 
-bool ShareSrcTextureApp::InitGLCommonResources()
+bool ShareDstTextureApp::InitGLCommonResources()
 {
 	int width, height;
 	unsigned char *data = LoadImage("PolygonPlanet.png", width, height);
@@ -126,7 +126,7 @@ bool ShareSrcTextureApp::InitGLCommonResources()
 	return true;
 }
 
-bool ShareSrcTextureApp::InitGLResourcesForTriangle()
+bool ShareDstTextureApp::InitGLResourcesForTriangle()
 {
 	GLuint triangleVAO;
 	GLuint triangleVBO;
@@ -166,7 +166,7 @@ bool ShareSrcTextureApp::InitGLResourcesForTriangle()
 	return true;
 }
 
-void ShareSrcTextureApp::RenderTriangle()
+void ShareDstTextureApp::RenderTriangle()
 {
 	glClearColor(0.4f, 0.4f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -180,7 +180,7 @@ void ShareSrcTextureApp::RenderTriangle()
 	return;
 }
 
-void ShareSrcTextureApp::SubWindowThreadMain()
+void ShareDstTextureApp::SubWindowThreadMain()
 {
 	SDL_GL_MakeCurrent(m_subWindow.handle, m_subWindow.context);
 	if (!InitGLResourcesForTriangle())
@@ -195,8 +195,8 @@ void ShareSrcTextureApp::SubWindowThreadMain()
 	return;
 }
 
-ShareSrcTextureApp::ShareSrcTextureApp() {}
-ShareSrcTextureApp::~ShareSrcTextureApp()
+ShareDstTextureApp::ShareDstTextureApp() {}
+ShareDstTextureApp::~ShareDstTextureApp()
 {
 	SDL_GL_DeleteContext(m_subWindow.context);
 	SDL_DestroyWindow(m_subWindow.handle);
@@ -206,7 +206,7 @@ ShareSrcTextureApp::~ShareSrcTextureApp()
 }
 
 
-bool ShareSrcTextureApp::Initialize()
+bool ShareDstTextureApp::Initialize()
 {
 	if (!InitSDLWindow())
 		return 1;
@@ -215,7 +215,7 @@ bool ShareSrcTextureApp::Initialize()
 	if (!InitGLCommonResources())
 		return 1;
 
-	m_subWindowThread = new std::thread(&ShareSrcTextureApp::SubWindowThreadMain, this);
+	m_subWindowThread = new std::thread(&ShareDstTextureApp::SubWindowThreadMain, this);
 
 	if (!InitGLResourcesForTriangle())
 		return 1;
@@ -223,7 +223,7 @@ bool ShareSrcTextureApp::Initialize()
 	return true;
 }
 
-void ShareSrcTextureApp::Run()
+void ShareDstTextureApp::Run()
 {
 	SDL_Event event;
 

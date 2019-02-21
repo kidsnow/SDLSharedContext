@@ -16,6 +16,9 @@
     <Filter Include="소스 파일\scenarios">
       <UniqueIdentifier>{2649ea72-f0db-4208-add9-d1f5d490590f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="헤더 파일\scenarios">
+      <UniqueIdentifier>{544005d9-b4a8-4e95-8800-b99591f8b04f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="triangle.frag">
@@ -36,7 +39,10 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="share_src_texture.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>헤더 파일\scenarios</Filter>
+    </ClInclude>
+    <ClInclude Include="share_dst_texture.h">
+      <Filter>헤더 파일\scenarios</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -48,6 +54,12 @@
     </ClCompile>
     <ClCompile Include="share_src_texture.cpp">
       <Filter>소스 파일\scenarios</Filter>
+    </ClCompile>
+    <ClCompile Include="share_dst_texture.cpp">
+      <Filter>소스 파일\scenarios</Filter>
+    </ClCompile>
+    <ClCompile Include="application.cpp">
+      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

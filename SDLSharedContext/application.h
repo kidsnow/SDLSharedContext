@@ -29,4 +29,6 @@ protected:
 		int posX, posY;
 		int width, height;
 	} testWindow;
+	unsigned char* LoadImage(const char* fileName, int& width, int& height);
+	void FreeImage(unsigned char* data);
 };

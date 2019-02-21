@@ -1,7 +1,7 @@
 project(SDL_SHARED_CONTEXT)
 cmake_minimum_required(VERSION 3.9)
 
-add_definitions(-DGLEW_NO_GLU)
+add_definitions(-DGLEW_NO_GLU -DSDL_MAIN_HANDLED -DSTB_IMAGE_IMPLEMENTATION)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -16,8 +16,8 @@ set(SOURCE_DIR ${CMAKE_SOURCE_DIR}/SDLSharedContext)
 
 include_directories(${THIRDPARTY_DIR}/include)
 
-add_executable(shared_context_example ${SOURCE_DIR}/main.cpp
-                                      ${SOURCE_DIR}/shader.cpp
-                                      ${SOURCE_DIR}/texture.cpp)
+file(GLOB SOURCES ${SOURCE_DIR}/*.cpp)
+
+add_executable(shared_context_example ${SOURCES})
 
 target_link_libraries(shared_context_example GLEW SDL2 OpenGL -pthread)

@@ -183,6 +183,8 @@ xcopy /y $(SolutionDir)\ThirdParty\lib\$(PlatformTarget)\glew32.dll $(OutDir)</C
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="application.cpp" />
+    <ClCompile Include="share_dst_texture.cpp" />
     <ClCompile Include="share_src_texture.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shader.cpp">
@@ -203,6 +205,7 @@ xcopy /y $(SolutionDir)\ThirdParty\lib\$(PlatformTarget)\glew32.dll $(OutDir)</C
   <ItemGroup>
     <ClInclude Include="application.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="share_dst_texture.h" />
     <ClInclude Include="share_src_texture.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
