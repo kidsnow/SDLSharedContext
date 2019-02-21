@@ -18,7 +18,10 @@ private:
 	std::thread* m_subWindowThread;
 	bool m_windowShouldClose = false;
 	GLfloat* m_rectangleVertices;
-	GLuint m_texture;
+	GLuint m_srcTexture;
+	GLuint m_dstTexture;
+	GLuint m_offscreenFBO;
+	GLuint m_depthbuffer;
 
 private:
 	bool CreateAndShowWindow(testWindow& window);
@@ -26,6 +29,7 @@ private:
 	bool CreateGLContext();
 	bool InitGLCommonResources();
 	bool InitGLResourcesForTriangle();
+	bool InitGLResourcesForFramebuffer(int width, int height);
 	void RenderTriangle();
 	void SubWindowThreadMain();
 };

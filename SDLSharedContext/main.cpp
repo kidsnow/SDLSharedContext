@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv)
 {
-	Application* app = new ShareSrcTextureApp();
+	Application* app = new ShareDstTextureApp();
 
 	app->Initialize();
 	app->Run();

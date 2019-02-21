@@ -107,8 +107,8 @@ bool ShareDstTextureApp::InitGLCommonResources()
 	unsigned char *data = LoadImage("PolygonPlanet.png", width, height);
 	if (data)
 	{
-		glGenTextures(1, &m_texture);
-		glBindTexture(GL_TEXTURE_2D, m_texture);
+		glGenTextures(1, &m_srcTexture);
+		glBindTexture(GL_TEXTURE_2D, m_srcTexture);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -161,7 +161,39 @@ bool ShareDstTextureApp::InitGLResourcesForTriangle()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_texture);
+	glBindTexture(GL_TEXTURE_2D, m_srcTexture);
+
+	return true;
+}
+
+bool ShareDstTextureApp::InitGLResourcesForFramebuffer(int width, int height)
+{
+	glGenTextures(1, &m_dstTexture);
+	glBindTexture(GL_TEXTURE_2D, m_dstTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	glGenFramebuffers(1, &m_offscreenFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_offscreenFBO);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_dstTexture, 0);
+
+	glGenRenderbuffers(1, &m_depthbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_depthbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthbuffer);
+
+	if (GL_FRAMEBUFFER_COMPLETE != glCheckFramebufferStatus(GL_FRAMEBUFFER))
+	{
+		std::cerr << "Failed to generate framebuffer!" << std::endl;
+		return false;
+	}
 
 	return true;
 }
@@ -178,6 +210,42 @@ void ShareDstTextureApp::RenderTriangle()
 	glFinish();
 
 	return;
+}
+
+void FBO_2_PPM_file(const char* fileName, int width, int height)
+{
+	FILE    *output_image;
+	int     output_width, output_height;
+
+	output_width = width;
+	output_height = height;
+
+	/// READ THE PIXELS VALUES from FBO AND SAVE TO A .PPM FILE
+	int             i, j, k;
+	unsigned char   *pixels = (unsigned char*)malloc(output_width*output_height * 3);
+
+	/// READ THE CONTENT FROM THE FBO
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	glReadPixels(0, 0, output_width, output_height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+	output_image = fopen(fileName, "wt");
+	fprintf(output_image, "P3\n");
+	fprintf(output_image, "# Created by Ricao\n");
+	fprintf(output_image, "%d %d\n", output_width, output_height);
+	fprintf(output_image, "255\n");
+
+	k = 0;
+	for (i = 0; i < output_width; i++)
+	{
+		for (j = 0; j < output_height; j++)
+		{
+			fprintf(output_image, "%u %u %u ", (unsigned int)pixels[k], (unsigned int)pixels[k + 1],
+				(unsigned int)pixels[k + 2]);
+			k = k + 3;
+		}
+		fprintf(output_image, "\n");
+	}
+	free(pixels);
 }
 
 void ShareDstTextureApp::SubWindowThreadMain()
@@ -215,9 +283,13 @@ bool ShareDstTextureApp::Initialize()
 	if (!InitGLCommonResources())
 		return 1;
 
-	m_subWindowThread = new std::thread(&ShareDstTextureApp::SubWindowThreadMain, this);
+	//m_subWindowThread = new std::thread(&ShareDstTextureApp::SubWindowThreadMain, this);
 
 	if (!InitGLResourcesForTriangle())
+		return 1;
+
+	GLuint offscreenFBO;
+	if (!InitGLResourcesForFramebuffer(m_mainWindow.width, m_mainWindow.height))
 		return 1;
 
 	return true;
@@ -252,8 +324,15 @@ void ShareDstTextureApp::Run()
 				break;
 			}
 		}
+		glBindFramebuffer(GL_FRAMEBUFFER, m_offscreenFBO);
+		glActiveTexture(GL_TEXTURE0);
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, m_srcTexture);
 		RenderTriangle();
+		FBO_2_PPM_file("mainWindow.ppm", m_mainWindow.width, m_mainWindow.height);
+
+		break;
 	}
 
-	m_subWindowThread->join();
+	//m_subWindowThread->join();
 }
