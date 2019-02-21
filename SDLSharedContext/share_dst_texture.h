@@ -18,8 +18,9 @@ private:
 	std::thread* m_subWindowThread;
 	GLfloat* m_rectangleVertices;
 	GLuint m_srcTexture;
-	GLuint m_mainWindowDstTexture;
-	GLuint m_subWindowDstTexture;
+	GLuint m_dstTexture;
+	//GLuint m_mainWindowDstTexture;
+	//GLuint m_subWindowDstTexture;
 	GLuint m_mainWindowOffscreenBuffer;
 	GLuint m_subWindowOffscreenBuffer;
 

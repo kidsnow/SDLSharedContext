@@ -250,8 +250,17 @@ void ShareDstTextureApp::SubWindowThreadMain()
 
 	if (!InitGLResourcesForTriangle())
 		return;
-	if (!InitGLResourcesForFramebuffer(m_subWindowOffscreenBuffer, m_subWindowDstTexture, m_subWindow.width, m_subWindow.height))
+
+	glGenFramebuffers(1, &m_subWindowOffscreenBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_subWindowOffscreenBuffer);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_dstTexture, 0);
+
+	if (GL_FRAMEBUFFER_COMPLETE != glCheckFramebufferStatus(GL_FRAMEBUFFER))
+	{
+		std::cerr << "Failed to generate framebuffer!" << std::endl;
 		return;
+	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_subWindowOffscreenBuffer);
 	glActiveTexture(GL_TEXTURE0);
@@ -282,13 +291,23 @@ bool ShareDstTextureApp::Initialize()
 		return 1;
 	if (!InitGLCommonResources())
 		return 1;
-
-	m_subWindowThread = new std::thread(&ShareDstTextureApp::SubWindowThreadMain, this);
-
 	if (!InitGLResourcesForTriangle())
 		return 1;
-	if (!InitGLResourcesForFramebuffer(m_mainWindowOffscreenBuffer, m_mainWindowDstTexture, m_mainWindow.width, m_mainWindow.height))
-		return 1;
+	
+	glGenTextures(1, &m_dstTexture);
+	glBindTexture(GL_TEXTURE_2D, m_dstTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_subWindow.width, m_subWindow.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	//glTexStorage2D(GL_TEXTURE_2D, 0, GL_RGB, m_subWindow.width, m_subWindow.height);
+	glFinish();
+
+	m_subWindowThread = new std::thread(&ShareDstTextureApp::SubWindowThreadMain, this);
 
 	return true;
 }
@@ -302,7 +321,6 @@ void ShareDstTextureApp::Run()
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, m_srcTexture);
 	RenderTriangle();
-	FBO_2_PPM_file("mainWindow.ppm", m_mainWindow.width, m_mainWindow.height);
 
 	m_subWindowThread->join();
 }
