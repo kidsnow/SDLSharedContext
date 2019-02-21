@@ -18,6 +18,11 @@ include_directories(${THIRDPARTY_DIR}/include)
 
 file(GLOB SOURCES ${SOURCE_DIR}/*.cpp)
 
+file(COPY ${SOURCE_DIR}/triangle.vert
+          ${SOURCE_DIR}/triangle.frag
+          ${SOURCE_DIR}/PolygonPlanet.png
+          DESTINATION ./)
+
 add_executable(shared_context_example ${SOURCES})
 
 target_link_libraries(shared_context_example GLEW SDL2 OpenGL -pthread)
