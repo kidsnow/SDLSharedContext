@@ -2,11 +2,11 @@
 
 #include "application.h"
 
-class ShareDstTextureApp : public Application
+class SingleOffscreenRenderingApp : public Application
 {
 public:
-	ShareDstTextureApp();
-	~ShareDstTextureApp();
+	SingleOffscreenRenderingApp();
+	~SingleOffscreenRenderingApp();
 
 public:
 	virtual bool Initialize();

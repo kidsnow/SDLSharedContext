@@ -10,11 +10,13 @@
 #include "SDL/SDL_opengl.h"
 #include "glm/glm.hpp"
 
+#include "shader.h"
+
 class Application
 {
 public:
-	Application() {}
-	~Application() {}
+	Application();
+	~Application();
 
 public:
 	virtual bool Initialize() = 0;
@@ -29,6 +31,22 @@ protected:
 		int posX, posY;
 		int width, height;
 	} testWindow;
+
+	testWindow m_mainWindow, m_subWindow;
+	std::thread* m_subWindowThread;
+	bool m_windowShouldClose = false;
+	GLfloat* m_rectangleVertices;
+	GLuint m_srcTexture;
+
+protected:	// Utility functions.
+	void FBO_2_PPM_file(const char* fileName, int width, int height);
 	unsigned char* LoadImage(const char* fileName, int& width, int& height);
 	void FreeImage(unsigned char* data);
+
+protected:	// Common logic for test applications.
+	bool CreateAndShowWindow(testWindow& window);
+	bool InitSDLWindow();
+	bool CreateGLContext();
+	bool InitGLCommonResources();
+	bool InitGLResourcesForTriangle();
 };

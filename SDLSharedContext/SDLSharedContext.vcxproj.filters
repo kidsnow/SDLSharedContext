@@ -44,6 +44,9 @@
     <ClInclude Include="share_dst_texture.h">
       <Filter>헤더 파일\scenarios</Filter>
     </ClInclude>
+    <ClInclude Include="single_offscreen_rendering.h">
+      <Filter>헤더 파일\scenarios</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -60,6 +63,9 @@
     </ClCompile>
     <ClCompile Include="application.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="single_offscreen_rendering.cpp">
+      <Filter>소스 파일\scenarios</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

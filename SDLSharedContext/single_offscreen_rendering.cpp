@@ -1,9 +1,9 @@
-#include "share_dst_texture.h"
+#include "single_offscreen_rendering.h"
 
-ShareDstTextureApp::ShareDstTextureApp() {}
-ShareDstTextureApp::~ShareDstTextureApp() {}
+SingleOffscreenRenderingApp::SingleOffscreenRenderingApp() {}
+SingleOffscreenRenderingApp::~SingleOffscreenRenderingApp() {}
 
-bool ShareDstTextureApp::InitGLResourcesForFramebuffer(GLuint& offscreenBuffer, GLuint& dstTexture, int width, int height)
+bool SingleOffscreenRenderingApp::InitGLResourcesForFramebuffer(GLuint& offscreenBuffer, GLuint& dstTexture, int width, int height)
 {
 	glGenTextures(1, &dstTexture);
 	glBindTexture(GL_TEXTURE_2D, dstTexture);
@@ -30,7 +30,7 @@ bool ShareDstTextureApp::InitGLResourcesForFramebuffer(GLuint& offscreenBuffer, 
 	return true;
 }
 
-void ShareDstTextureApp::RenderTriangle()
+void SingleOffscreenRenderingApp::RenderTriangle()
 {
 	glClearColor(0.4f, 0.4f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -44,35 +44,7 @@ void ShareDstTextureApp::RenderTriangle()
 	return;
 }
 
-void ShareDstTextureApp::SubWindowThreadMain()
-{
-	SDL_GL_MakeCurrent(m_subWindow.handle, m_subWindow.context);
-
-	if (!InitGLResourcesForTriangle())
-		return;
-
-	glGenFramebuffers(1, &m_subWindowOffscreenBuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_subWindowOffscreenBuffer);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_dstTexture, 0);
-
-	if (GL_FRAMEBUFFER_COMPLETE != glCheckFramebufferStatus(GL_FRAMEBUFFER))
-	{
-		std::cerr << "Failed to generate framebuffer!" << std::endl;
-		return;
-	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, m_subWindowOffscreenBuffer);
-	glActiveTexture(GL_TEXTURE0);
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, m_srcTexture);
-	RenderTriangle();
-	FBO_2_PPM_file("subWindow.ppm", m_subWindow.width, m_subWindow.height);
-
-	return;
-}
-
-bool ShareDstTextureApp::Initialize()
+bool SingleOffscreenRenderingApp::Initialize()
 {
 	if (!InitSDLWindow())
 		return 1;
@@ -82,7 +54,7 @@ bool ShareDstTextureApp::Initialize()
 		return 1;
 	if (!InitGLResourcesForTriangle())
 		return 1;
-	
+
 	glGenTextures(1, &m_dstTexture);
 	glBindTexture(GL_TEXTURE_2D, m_dstTexture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -96,12 +68,10 @@ bool ShareDstTextureApp::Initialize()
 
 	glFinish();
 
-	m_subWindowThread = new std::thread(&ShareDstTextureApp::SubWindowThreadMain, this);
-
 	return true;
 }
 
-void ShareDstTextureApp::Run()
+void SingleOffscreenRenderingApp::Run()
 {
 	SDL_Event event;
 
@@ -110,7 +80,4 @@ void ShareDstTextureApp::Run()
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, m_srcTexture);
 	RenderTriangle();
-	FBO_2_PPM_file("mainWindow.ppm", m_mainWindow.width, m_mainWindow.height);
-
-	m_subWindowThread->join();
 }

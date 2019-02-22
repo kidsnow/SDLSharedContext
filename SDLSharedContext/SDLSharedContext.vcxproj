@@ -197,6 +197,7 @@ xcopy /y $(SolutionDir)\ThirdParty\lib\$(PlatformTarget)\glew32.dll $(OutDir)</C
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="single_offscreen_rendering.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="triangle.frag" />
@@ -207,6 +208,7 @@ xcopy /y $(SolutionDir)\ThirdParty\lib\$(PlatformTarget)\glew32.dll $(OutDir)</C
     <ClInclude Include="shader.h" />
     <ClInclude Include="share_dst_texture.h" />
     <ClInclude Include="share_src_texture.h" />
+    <ClInclude Include="single_offscreen_rendering.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
