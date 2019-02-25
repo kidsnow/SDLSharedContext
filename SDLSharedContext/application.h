@@ -37,6 +37,9 @@ protected:
 	bool m_windowShouldClose = false;
 	GLfloat* m_rectangleVertices;
 	GLuint m_srcTexture;
+	GLuint m_dstTexture;
+	GLuint m_mainWindowOffscreenBuffer;
+	GLuint m_subWindowOffscreenBuffer;
 
 protected:	// Utility functions.
 	void FBO_2_PPM_file(const char* fileName, int width, int height);
@@ -46,7 +49,10 @@ protected:	// Utility functions.
 protected:	// Common logic for test applications.
 	bool CreateAndShowWindow(testWindow& window);
 	bool InitSDLWindow();
-	bool CreateGLContext();
-	bool InitGLCommonResources();
-	bool InitGLResourcesForTriangle();
+	bool InitGLContext();
+	bool InitSrcTexture();
+	bool InitDstTexture(int width, int hegiht);
+	bool InitOffscreenFramebuffer(GLuint& offscreenBuffer);
+	bool InitResourcesForRectangle();
+	void RenderRectangle(GLuint target);
 };

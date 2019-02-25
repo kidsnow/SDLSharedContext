@@ -14,37 +14,30 @@ Application::~Application()
 
 void Application::FBO_2_PPM_file(const char* fileName, int width, int height)
 {
-	FILE    *output_image;
-	int     output_width, output_height;
+	FILE *fp;
 
-	output_width = width;
-	output_height = height;
+	unsigned char   *pixels = (unsigned char*)malloc(width*height * 3);
 
-	/// READ THE PIXELS VALUES from FBO AND SAVE TO A .PPM FILE
-	int             i, j, k;
-	unsigned char   *pixels = (unsigned char*)malloc(output_width*output_height * 3);
-
-	/// READ THE CONTENT FROM THE FBO
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
-	glReadPixels(0, 0, output_width, output_height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+	glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
-	output_image = fopen(fileName, "wt");
-	fprintf(output_image, "P3\n");
-	fprintf(output_image, "# Created by Ricao\n");
-	fprintf(output_image, "%d %d\n", output_width, output_height);
-	fprintf(output_image, "255\n");
+	fp = fopen(fileName, "wt");
+	fprintf(fp, "P3\n");
+	fprintf(fp, "%d %d\n", width, height);
+	fprintf(fp, "255\n");
 
-	k = 0;
-	for (i = 0; i < output_width; i++)
+	for (int i = height - 1; i >= 0; i--)
 	{
-		for (j = 0; j < output_height; j++)
+		for (int j = 0; j < width; j++)
 		{
-			fprintf(output_image, "%u %u %u ", (unsigned int)pixels[k], (unsigned int)pixels[k + 1],
-				(unsigned int)pixels[k + 2]);
-			k = k + 3;
+			int idx = (i * width + j) * 3;
+			fprintf(fp, "%u %u %u ",
+					(unsigned int)pixels[idx],
+					(unsigned int)pixels[idx + 1],
+					(unsigned int)pixels[idx + 2]);
 		}
-		fprintf(output_image, "\n");
 	}
+	fclose(fp);
 	free(pixels);
 }
 
@@ -120,7 +113,7 @@ bool Application::InitSDLWindow()
 	return true;
 }
 
-bool Application::CreateGLContext()
+bool Application::InitGLContext()
 {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
@@ -160,8 +153,9 @@ bool Application::CreateGLContext()
 	return true;
 }
 
-bool Application::InitGLCommonResources()
+bool Application::InitSrcTexture()
 {
+	// Initialize source texture.
 	int width, height;
 	unsigned char *data = LoadImage("PolygonPlanet.png", width, height);
 	if (data)
@@ -186,7 +180,35 @@ bool Application::InitGLCommonResources()
 	return true;
 }
 
-bool Application::InitGLResourcesForTriangle()
+bool Application::InitDstTexture(int width, int height)
+{
+	glGenTextures(1, &m_dstTexture);
+	glBindTexture(GL_TEXTURE_2D, m_dstTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glFinish();
+
+	return true;
+}
+
+bool Application::InitOffscreenFramebuffer(GLuint& offscreenBuffer)
+{
+	glGenFramebuffers(1, &offscreenBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, offscreenBuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_dstTexture, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	return true;
+}
+
+bool Application::InitResourcesForRectangle()
 {
 	GLuint triangleVAO;
 	GLuint triangleVBO;
@@ -224,4 +246,17 @@ bool Application::InitGLResourcesForTriangle()
 	glBindTexture(GL_TEXTURE_2D, m_srcTexture);
 
 	return true;
+}
+
+void Application::RenderRectangle(GLuint target)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, target);
+	glClearColor(0.4f, 0.4f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_srcTexture);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glFinish();
+
+	return;
 }

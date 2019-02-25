@@ -13,6 +13,5 @@ public:
 	virtual void Run();
 
 private:
-	void RenderTriangle();
 	void SubWindowThreadMain();
 };
