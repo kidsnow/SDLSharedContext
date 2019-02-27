@@ -6,8 +6,8 @@
 int main(int argc, char** argv)
 {
 	Application* app = new ShareSrcTextureApp();
-	//Application* app = new SingleOffscreenRenderingApp();
-	//Application* app = new ShareDstTextureApp();
+	// Application* app = new SingleOffscreenRenderingApp();
+	// Application* app = new ShareDstTextureApp();
 
 	app->Initialize();
 	app->Run();

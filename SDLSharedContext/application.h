@@ -35,7 +35,9 @@ protected:
 	testWindow m_mainWindow, m_subWindow;
 	std::thread* m_subWindowThread;
 	bool m_windowShouldClose = false;
+	Shader* m_shader;
 	GLfloat* m_rectangleVertices;
+	GLuint m_triangleVAO;
 	GLuint m_srcTexture;
 	GLuint m_dstTexture;
 	GLuint m_mainWindowOffscreenBuffer;

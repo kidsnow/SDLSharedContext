@@ -204,14 +204,19 @@ bool Application::InitOffscreenFramebuffer(GLuint& offscreenBuffer)
 	glBindFramebuffer(GL_FRAMEBUFFER, offscreenBuffer);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_dstTexture, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	GLenum result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (result != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cerr << "Framebuffer not complete: " << result << std::endl;
+		return false;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	return true;
 }
 
 bool Application::InitResourcesForRectangle()
 {
-	GLuint triangleVAO;
-	GLuint triangleVBO;
 	m_rectangleVertices = new GLfloat[30]
 	{
 		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,	// lower left
@@ -221,15 +226,15 @@ bool Application::InitResourcesForRectangle()
 		 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,	// lower right
 		 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,	// upper right
 	};
-	Shader* s_shader = new Shader();
-	s_shader->CompileRenderingShader("triangle.vert", "triangle.frag");
-	s_shader->Use();
+	m_shader = new Shader();
+	m_shader->CompileRenderingShader("triangle.vert", "triangle.frag");
 
 	// Initialize vertex array object.
-	glGenVertexArrays(1, &triangleVAO);
-	glBindVertexArray(triangleVAO);
+	glGenVertexArrays(1, &m_triangleVAO);
+	glBindVertexArray(m_triangleVAO);
 
 	// Initialize vertex buffer object.
+	GLuint triangleVBO;
 	glGenBuffers(1, &triangleVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 5, m_rectangleVertices, GL_STATIC_DRAW);
@@ -242,8 +247,8 @@ bool Application::InitResourcesForRectangle()
 	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_srcTexture);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
 	return true;
 }
@@ -253,8 +258,13 @@ void Application::RenderRectangle(GLuint target)
 	glBindFramebuffer(GL_FRAMEBUFFER, target);
 	glClearColor(0.4f, 0.4f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
+
+	glBindVertexArray(m_triangleVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_srcTexture);
+
+	m_shader->Use();
+
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glFinish();
 
