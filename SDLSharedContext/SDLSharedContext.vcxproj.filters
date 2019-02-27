@@ -29,9 +29,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stb_image.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="shader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
