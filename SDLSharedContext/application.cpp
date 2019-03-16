@@ -131,7 +131,7 @@ bool Application::InitGLContext()
 
 	SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 	m_subWindow.context = SDL_GL_CreateContext(m_subWindow.handle);
-	if (!m_mainWindow.context) {
+	if (!m_subWindow.context) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_GL_CreateContext(): %s\n", SDL_GetError());
 		SDL_DestroyWindow(m_subWindow.handle);
 		SDL_Quit();
