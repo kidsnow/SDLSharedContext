@@ -44,7 +44,7 @@ void Application::FBO_2_PPM_file(const char* fileName, int width, int height)
 unsigned char* Application::LoadImage(const char* fileName, int& width, int& height)
 {
 	int temp;
-	return stbi_load("PolygonPlanet.png", &width, &height, &temp, 0);
+	return stbi_load(fileName, &width, &height, &temp, 0);
 }
 
 void Application::FreeImage(unsigned char* data)
