@@ -18,8 +18,8 @@ include_directories(${THIRDPARTY_DIR}/include)
 
 file(GLOB SOURCES ${SOURCE_DIR}/*.cpp)
 
-file(COPY ${SOURCE_DIR}/triangle.vert
-          ${SOURCE_DIR}/triangle.frag
+file(COPY ${SOURCE_DIR}/simple.vert
+          ${SOURCE_DIR}/simple.frag
           ${SOURCE_DIR}/PolygonPlanet.png
           DESTINATION ./)
 

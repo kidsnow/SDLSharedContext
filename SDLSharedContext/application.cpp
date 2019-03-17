@@ -227,24 +227,24 @@ bool Application::InitResourcesForRectangle()
 		 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,	// upper right
 	};
 	m_shader = new Shader();
-	m_shader->CompileRenderingShader("triangle.vert", "triangle.frag");
+	m_shader->CompileRenderingShader("simple.vert", "simple.frag");
 
 	// Initialize vertex array object.
-	glGenVertexArrays(1, &m_triangleVAO);
-	glBindVertexArray(m_triangleVAO);
+	glGenVertexArrays(1, &m_rectangleVAO);
+	glBindVertexArray(m_rectangleVAO);
 
 	// Initialize vertex buffer object.
-	GLuint triangleVBO;
-	glGenBuffers(1, &triangleVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
+	GLuint rectangleVBO;
+	glGenBuffers(1, &rectangleVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, rectangleVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 5, m_rectangleVertices, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, rectangleVBO);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
 
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, rectangleVBO);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -259,7 +259,7 @@ void Application::RenderRectangle(GLuint target)
 	glClearColor(0.4f, 0.4f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glBindVertexArray(m_triangleVAO);
+	glBindVertexArray(m_rectangleVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_srcTexture);
 

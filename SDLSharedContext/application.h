@@ -37,7 +37,7 @@ protected:
 	bool m_windowShouldClose = false;
 	Shader* m_shader;
 	GLfloat* m_rectangleVertices;
-	GLuint m_triangleVAO;
+	GLuint m_rectangleVAO;
 	GLuint m_srcTexture;
 	GLuint m_dstTexture;
 	GLuint m_mainWindowOffscreenBuffer;

@@ -21,10 +21,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="triangle.frag">
+    <None Include="simple.frag">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="triangle.vert">
+    <None Include="simple.vert">
       <Filter>리소스 파일</Filter>
     </None>
   </ItemGroup>
